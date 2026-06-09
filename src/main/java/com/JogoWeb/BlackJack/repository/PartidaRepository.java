@@ -39,4 +39,8 @@ public class PartidaRepository {
     public boolean existePorId(UUID id) {
         return partidas.containsKey(id);
     }
+
+    public void deletar(UUID id) {
+        partidas.remove(id);
+    }
 }

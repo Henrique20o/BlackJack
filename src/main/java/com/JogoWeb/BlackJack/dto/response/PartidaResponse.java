@@ -15,12 +15,15 @@ public class PartidaResponse {
     private String modoJogo;
     private UUID jogadorAtualId;
     private UUID vencedorId;
-    private boolean empate;
+    private boolean empateRound;
+    private boolean empatePartida;
     private int cartasRestantes;
     private int quantidadeRounds;
     private int roundAtual;
     private Map<UUID, Integer> placar;
     private List<JogadorPartidaResponse> jogadores;
+    private UUID vencedorPartidaId;
+    private int quantidadeMaximaJogadores;
 
     public PartidaResponse(Partida partida) {
         this.id = partida.getId();
@@ -28,11 +31,14 @@ public class PartidaResponse {
         this.modoJogo = partida.getModoJogo().name();
         this.jogadorAtualId = partida.getJogadorAtualId();
         this.vencedorId = partida.getVencedorId();
-        this.empate = partida.isEmpate();
+        this.empateRound = partida.isEmpateRound();
+        this.empatePartida = partida.isEmpatePartida();
         this.cartasRestantes = partida.getBaralho().size();
         this.quantidadeRounds = partida.getQuantidadeRounds();
         this.roundAtual = partida.getRoundAtual();
         this.placar = partida.getPlacar();
+        this.quantidadeMaximaJogadores = partida.getQuantidadeMaximaJogadores();
+        this.vencedorPartidaId = partida.getVencedorPartidaId();
         this.jogadores = partida.getJogadores()
                 .stream()
                 .map(JogadorPartidaResponse::new)

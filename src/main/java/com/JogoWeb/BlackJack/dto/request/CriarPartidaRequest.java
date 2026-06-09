@@ -19,6 +19,10 @@ public class CriarPartidaRequest {
     @Max(value = 10, message = "A partida pode ter no máximo 10 rounds.")
     private int quantidadeRounds = 1;
 
+    @Min(value = 2, message = "A partida deve ter pelo menos 2 jogadores.")
+    @Max(value = 5, message = "A partida pode ter no máximo 5 jogadores.")
+    private int quantidadeMaximaJogadores = 2;
+
     public UUID getIdJogador() {
         return idJogador;
     }
@@ -41,5 +45,13 @@ public class CriarPartidaRequest {
 
     public void setQuantidadeRounds(int quantidadeRounds) {
         this.quantidadeRounds = quantidadeRounds;
+    }
+
+    public int getQuantidadeMaximaJogadores() {
+        return quantidadeMaximaJogadores;
+    }
+
+    public void setQuantidadeMaximaJogadores(int quantidadeMaximaJogadores) {
+        this.quantidadeMaximaJogadores = quantidadeMaximaJogadores;
     }
 }

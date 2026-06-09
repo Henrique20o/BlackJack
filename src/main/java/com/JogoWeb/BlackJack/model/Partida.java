@@ -17,23 +17,42 @@ public class Partida {
     private ModoJogo modoJogo;
     private UUID jogadorAtualId;
     private UUID vencedorId;
-    private boolean empate;
+
     private int quantidadeRounds;
     private int roundAtual;
+
     private Map<UUID, Integer> placar;
     private UUID vencedorPartidaId;
 
-    public Partida(ModoJogo modoJogo, Stack<Carta> baralho, int quantidadeRounds) {
+    private boolean empateRound;
+    private boolean empatePartida;
+
+    private int quantidadeMaximaJogadores;
+    private int indiceJogadorInicialRound;
+
+    public Partida(
+            ModoJogo modoJogo,
+            Stack<Carta> baralho,
+            int quantidadeRounds,
+            int quantidadeMaximaJogadores
+    ) {
         this.id = UUID.randomUUID();
         this.jogadores = new ArrayList<>();
         this.baralho = baralho;
         this.status = StatusPartida.AGUARDANDO_JOGADORES;
         this.modoJogo = modoJogo;
-        this.empate = false;
+
         this.quantidadeRounds = quantidadeRounds;
         this.roundAtual = 1;
+
+        this.quantidadeMaximaJogadores = quantidadeMaximaJogadores;
+        this.indiceJogadorInicialRound = 0;
+
         this.placar = new HashMap<>();
         this.vencedorPartidaId = null;
+
+        this.empateRound = false;
+        this.empatePartida = false;
     }
 
     public void adicionarJogador(Jogador jogador) {
@@ -45,16 +64,9 @@ public class Partida {
         this.jogadores.add(jogadorDaPartida);
         this.placar.put(jogador.getId(), 0);
     }
+
     public boolean estaCheia() {
-        if (modoJogo == ModoJogo.JOGADOR_VS_JOGADOR) {
-            return jogadores.size() == 2;
-        }
-
-        if (modoJogo == ModoJogo.JOGADORES_VS_DEALER) {
-            return jogadores.size() >= 1;
-        }
-
-        return false;
+        return jogadores.size() >= quantidadeMaximaJogadores;
     }
 
     public Jogador buscarJogadorPorId(UUID idJogador) {
@@ -118,8 +130,12 @@ public class Partida {
         placar.put(idJogador, pontosAtuais + 1);
     }
 
+    public void avancarJogadorInicialRound() {
+        this.indiceJogadorInicialRound =
+                (this.indiceJogadorInicialRound + 1) % jogadores.size();
+    }
 
-
-
-
+    public UUID getIdJogadorInicialRound() {
+        return jogadores.get(indiceJogadorInicialRound).getId();
+    }
 }

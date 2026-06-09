@@ -51,6 +51,14 @@ public class PartidaController {
     ) {
         return partidaService.realizarJogada(id, request);
     }
+    @PostMapping("/{id}/proximo-round")
+    public PartidaResponse iniciarProximoRound(@PathVariable UUID id) {
+        return partidaService.iniciarProximoRound(id);
+    }
 
-
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deletarPartida(@PathVariable UUID id) {
+        partidaService.deletarPartida(id);
+    }
 }

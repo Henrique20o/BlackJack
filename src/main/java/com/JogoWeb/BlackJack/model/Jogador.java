@@ -43,11 +43,27 @@ public class Jogador {
 
     public int calcularPontuacao() {
         int total = 0;
+        int quantidadeAs = 0;
 
         for (Carta carta : mao) {
             total += carta.getPontos();
+
+            if (carta.getValor() == ValorCarta.AS) {
+                quantidadeAs++;
+            }
+        }
+
+        while (quantidadeAs > 0 && total + 10 <= 21) {
+            total += 10;
+            quantidadeAs--;
         }
 
         return total;
+    }
+
+    public void resetarParaNovoRound() {
+        this.mao.clear();
+        this.parou = false;
+        this.estourou = false;
     }
 }

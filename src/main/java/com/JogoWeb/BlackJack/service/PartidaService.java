@@ -38,7 +38,8 @@ public class PartidaService {
         Partida partida = new Partida(
                 request.getModoJogo(),
                 baralhoService.criarBaralhoEmbaralhado(),
-                request.getQuantidadeRounds()
+                request.getQuantidadeRounds(),
+                request.getQuantidadeMaximaJogadores()
         );
 
         partida.adicionarJogador(jogador);
@@ -83,7 +84,7 @@ public class PartidaService {
         if (partida.estaCheia()) {
             partida.setStatus(StatusPartida.EM_ANDAMENTO);
             distribuirCartasIniciais(partida);
-            partida.setJogadorAtualId(partida.getJogadores().get(0).getId());
+            definirJogadorInicialDoRound(partida);
         }
 
         partidaRepository.salvar(partida);
@@ -179,6 +180,28 @@ public class PartidaService {
             return;
         }
 
+        Jogador vencedorRound = definirVencedorDoRound(partida);
+
+        partida.setJogadorAtualId(null);
+
+        if (vencedorRound == null) {
+            partida.setEmpateRound(true);
+            partida.setVencedorId(null);
+        } else {
+            partida.setEmpateRound(false);
+            partida.setVencedorId(vencedorRound.getId());
+            partida.adicionarPontoParaJogador(vencedorRound.getId());
+        }
+
+        if (partida.getRoundAtual() < partida.getQuantidadeRounds()) {
+            partida.setStatus(StatusPartida.ROUND_FINALIZADO);
+        } else {
+            partida.setStatus(StatusPartida.FINALIZADA);
+            definirVencedorDaPartida(partida);
+        }
+    }
+
+    private Jogador definirVencedorDoRound(Partida partida) {
         Jogador vencedor = null;
         int melhorPontuacao = 0;
         boolean empate = false;
@@ -199,17 +222,82 @@ public class PartidaService {
             }
         }
 
-        partida.setStatus(StatusPartida.FINALIZADA);
-        partida.setJogadorAtualId(null);
-
-        if (vencedor == null || empate) {
-            partida.setEmpate(true);
-            partida.setVencedorId(null);
-        } else {
-            partida.setEmpate(false);
-            partida.setVencedorId(vencedor.getId());
+        if (empate) {
+            return null;
         }
+
+        return vencedor;
     }
 
+    private void definirVencedorDaPartida(Partida partida) {
+        UUID vencedorPartidaId = null;
+        int maiorPontuacao = -1;
+        boolean empateFinal = false;
 
+        for (var entrada : partida.getPlacar().entrySet()) {
+            UUID idJogador = entrada.getKey();
+            int pontos = entrada.getValue();
+
+            if (pontos > maiorPontuacao) {
+                maiorPontuacao = pontos;
+                vencedorPartidaId = idJogador;
+                empateFinal = false;
+            } else if (pontos == maiorPontuacao) {
+                empateFinal = true;
+            }
+        }
+
+        if (empateFinal) {
+            partida.setEmpatePartida(true);
+            partida.setVencedorPartidaId(null);
+        } else {
+            partida.setEmpatePartida(false);
+            partida.setVencedorPartidaId(vencedorPartidaId);
+        }
+    }
+    public PartidaResponse iniciarProximoRound(UUID idPartida) {
+        Partida partida = partidaRepository.buscarPorId(idPartida)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Partida não encontrada."));
+
+        if (partida.getStatus() != StatusPartida.ROUND_FINALIZADO) {
+            throw new RegraDeNegocioException("Só é possível iniciar o próximo round após o round atual ser finalizado.");
+        }
+
+        if (partida.getRoundAtual() >= partida.getQuantidadeRounds()) {
+            throw new RegraDeNegocioException("Não existem mais rounds para iniciar.");
+        }
+
+        partida.setRoundAtual(partida.getRoundAtual() + 1);
+
+        partida.avancarJogadorInicialRound();
+
+        for (Jogador jogador : partida.getJogadores()) {
+            jogador.resetarParaNovoRound();
+        }
+
+        partida.setBaralho(baralhoService.criarBaralhoEmbaralhado());
+
+        distribuirCartasIniciais(partida);
+
+        definirJogadorInicialDoRound(partida);
+
+        partida.setVencedorId(null);
+        partida.setEmpateRound(false);
+        partida.setStatus(StatusPartida.EM_ANDAMENTO);
+
+        partidaRepository.salvar(partida);
+
+        return new PartidaResponse(partida);
+    }
+
+    public void deletarPartida(UUID idPartida) {
+        if (!partidaRepository.existePorId(idPartida)) {
+            throw new RecursoNaoEncontradoException("Partida não encontrada.");
+        }
+        partidaRepository.deletar(idPartida);
+    }
+
+    private void definirJogadorInicialDoRound(Partida partida) {
+        partida.setJogadorAtualId(partida.getIdJogadorInicialRound());
+    }
 }
