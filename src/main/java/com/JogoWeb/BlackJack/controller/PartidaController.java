@@ -2,6 +2,7 @@ package com.JogoWeb.BlackJack.controller;
 
 import com.JogoWeb.BlackJack.dto.request.CriarPartidaRequest;
 import com.JogoWeb.BlackJack.dto.request.EntrarPartidaRequest;
+import com.JogoWeb.BlackJack.dto.request.JogadaRequest;
 import com.JogoWeb.BlackJack.dto.response.PartidaResponse;
 import com.JogoWeb.BlackJack.service.PartidaService;
 import jakarta.validation.Valid;
@@ -38,4 +39,18 @@ public class PartidaController {
     ) {
         return partidaService.entrarNaPartida(id, request);
     }
+    @GetMapping("/{id}")
+    public PartidaResponse buscarPartidaPorId(@PathVariable UUID id) {
+        return partidaService.buscarPartidaPorId(id);
+    }
+
+    @PostMapping("/{id}/jogadas")
+    public PartidaResponse realizarJogada(
+            @PathVariable UUID id,
+            @Valid @RequestBody JogadaRequest request
+    ) {
+        return partidaService.realizarJogada(id, request);
+    }
+
+
 }

@@ -2,6 +2,7 @@ package com.JogoWeb.BlackJack.service;
 
 import com.JogoWeb.BlackJack.dto.request.CriarJogadorRequest;
 import com.JogoWeb.BlackJack.dto.response.JogadorResponse;
+import com.JogoWeb.BlackJack.exception.RecursoNaoEncontradoException;
 import com.JogoWeb.BlackJack.model.Jogador;
 import com.JogoWeb.BlackJack.repository.JogadorRepository;
 import org.springframework.stereotype.Service;
@@ -31,8 +32,7 @@ public class JogadorService {
 
     public Jogador buscarJogadorPorId(UUID id) {
         return jogadorRepository.buscarPorId(id)
-                .orElseThrow(() -> new RuntimeException("Jogador não encontrado."));
-    }
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Jogador não encontrado."));    }
 
     public List<Jogador> listarTodos() {
         return jogadorRepository.listarTodos();

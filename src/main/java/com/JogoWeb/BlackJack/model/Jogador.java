@@ -25,6 +25,14 @@ public class Jogador {
         this.estourou = false;
     }
 
+    public Jogador(UUID id, String nome) {
+        this.id = id;
+        this.nome = nome;
+        this.mao = new ArrayList<>();
+        this.parou = false;
+        this.estourou = false;
+    }
+
     public void receberCarta(Carta carta) {
         this.mao.add(carta);
 

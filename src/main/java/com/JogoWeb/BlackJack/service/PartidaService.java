@@ -2,7 +2,10 @@ package com.JogoWeb.BlackJack.service;
 
 import com.JogoWeb.BlackJack.dto.request.CriarPartidaRequest;
 import com.JogoWeb.BlackJack.dto.request.EntrarPartidaRequest;
+import com.JogoWeb.BlackJack.dto.request.JogadaRequest;
 import com.JogoWeb.BlackJack.dto.response.PartidaResponse;
+import com.JogoWeb.BlackJack.exception.RecursoNaoEncontradoException;
+import com.JogoWeb.BlackJack.exception.RegraDeNegocioException;
 import com.JogoWeb.BlackJack.model.Jogador;
 import com.JogoWeb.BlackJack.model.Partida;
 import com.JogoWeb.BlackJack.model.StatusPartida;
@@ -34,7 +37,8 @@ public class PartidaService {
 
         Partida partida = new Partida(
                 request.getModoJogo(),
-                baralhoService.criarBaralhoEmbaralhado()
+                baralhoService.criarBaralhoEmbaralhado(),
+                request.getQuantidadeRounds()
         );
 
         partida.adicionarJogador(jogador);
@@ -62,16 +66,16 @@ public class PartidaService {
 
     public PartidaResponse entrarNaPartida(UUID idPartida, EntrarPartidaRequest request) {
         Partida partida = partidaRepository.buscarPorId(idPartida)
-                .orElseThrow(() -> new RuntimeException("Partida não encontrada."));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Partida não encontrada."));
 
         Jogador jogador = jogadorService.buscarJogadorPorId(request.getIdJogador());
 
         if (!partida.podeEntrar()) {
-            throw new RuntimeException("Não é possível entrar nesta partida.");
+            throw new RegraDeNegocioException("Não é possível entrar nesta partida.");
         }
 
         if (partida.jogadorEstaNaPartida(jogador.getId())) {
-            throw new RuntimeException("Este jogador já está na partida.");
+            throw new RegraDeNegocioException("Este jogador já está na partida.");
         }
 
         partida.adicionarJogador(jogador);
@@ -86,4 +90,126 @@ public class PartidaService {
 
         return new PartidaResponse(partida);
     }
+    public PartidaResponse buscarPartidaPorId(UUID idPartida) {
+        Partida partida = partidaRepository.buscarPorId(idPartida)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Partida não encontrada."));
+        return new PartidaResponse(partida);
+    }
+    public PartidaResponse realizarJogada(UUID idPartida, JogadaRequest request) {
+        Partida partida = partidaRepository.buscarPorId(idPartida)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Partida não encontrada."));
+
+        if (partida.getStatus() != StatusPartida.EM_ANDAMENTO) {
+            throw new RegraDeNegocioException("A partida não está em andamento.");
+        }
+
+        Jogador jogador = partida.buscarJogadorPorId(request.getIdJogador());
+
+        if (jogador == null) {
+            throw new RegraDeNegocioException("Jogador não pertence a esta partida.");
+        }
+
+        if (!partida.getJogadorAtualId().equals(jogador.getId())) {
+            throw new RegraDeNegocioException("Não é a vez deste jogador.");
+        }
+
+        if (jogador.isParou() || jogador.isEstourou()) {
+            throw new RegraDeNegocioException("Este jogador não pode mais jogar.");
+        }
+
+        switch (request.getAcao()) {
+            case COMPRAR -> {
+                comprarCarta(partida, jogador);
+
+                if (jogador.isEstourou()) {
+                    passarTurno(partida);
+                }
+            }
+
+            case PARAR -> {
+                jogador.setParou(true);
+                passarTurno(partida);
+            }
+        }
+
+        verificarFimDaPartida(partida);
+
+        partidaRepository.salvar(partida);
+
+        return new PartidaResponse(partida);
+    }
+
+    private void comprarCarta(Partida partida, Jogador jogador) {
+        jogador.receberCarta(
+                baralhoService.comprarCarta(partida.getBaralho())
+        );
+    }
+
+    private void passarTurno(Partida partida) {
+        List<Jogador> jogadores = partida.getJogadores();
+
+        int indiceAtual = -1;
+
+        for (int i = 0; i < jogadores.size(); i++) {
+            if (jogadores.get(i).getId().equals(partida.getJogadorAtualId())) {
+                indiceAtual = i;
+                break;
+            }
+        }
+
+        for (int i = 1; i <= jogadores.size(); i++) {
+            int proximoIndice = (indiceAtual + i) % jogadores.size();
+            Jogador proximoJogador = jogadores.get(proximoIndice);
+
+            if (!proximoJogador.isParou() && !proximoJogador.isEstourou()) {
+                partida.setJogadorAtualId(proximoJogador.getId());
+                return;
+            }
+        }
+
+        partida.setJogadorAtualId(null);
+    }
+
+    private void verificarFimDaPartida(Partida partida) {
+        boolean todosEncerraram = partida.getJogadores()
+                .stream()
+                .allMatch(jogador -> jogador.isParou() || jogador.isEstourou());
+
+        if (!todosEncerraram) {
+            return;
+        }
+
+        Jogador vencedor = null;
+        int melhorPontuacao = 0;
+        boolean empate = false;
+
+        for (Jogador jogador : partida.getJogadores()) {
+            int pontuacao = jogador.calcularPontuacao();
+
+            if (pontuacao > 21) {
+                continue;
+            }
+
+            if (pontuacao > melhorPontuacao) {
+                melhorPontuacao = pontuacao;
+                vencedor = jogador;
+                empate = false;
+            } else if (pontuacao == melhorPontuacao && vencedor != null) {
+                empate = true;
+            }
+        }
+
+        partida.setStatus(StatusPartida.FINALIZADA);
+        partida.setJogadorAtualId(null);
+
+        if (vencedor == null || empate) {
+            partida.setEmpate(true);
+            partida.setVencedorId(null);
+        } else {
+            partida.setEmpate(false);
+            partida.setVencedorId(vencedor.getId());
+        }
+    }
+
+
 }

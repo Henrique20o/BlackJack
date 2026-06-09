@@ -1,6 +1,8 @@
 package com.JogoWeb.BlackJack.dto.request;
 
 import com.JogoWeb.BlackJack.model.ModoJogo;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
@@ -12,6 +14,10 @@ public class CriarPartidaRequest {
 
     @NotNull(message = "O modo de jogo é obrigatório.")
     private ModoJogo modoJogo;
+
+    @Min(value = 1, message = "A partida deve ter pelo menos 1 round.")
+    @Max(value = 10, message = "A partida pode ter no máximo 10 rounds.")
+    private int quantidadeRounds = 1;
 
     public UUID getIdJogador() {
         return idJogador;
@@ -27,5 +33,13 @@ public class CriarPartidaRequest {
 
     public void setModoJogo(ModoJogo modoJogo) {
         this.modoJogo = modoJogo;
+    }
+
+    public int getQuantidadeRounds() {
+        return quantidadeRounds;
+    }
+
+    public void setQuantidadeRounds(int quantidadeRounds) {
+        this.quantidadeRounds = quantidadeRounds;
     }
 }
