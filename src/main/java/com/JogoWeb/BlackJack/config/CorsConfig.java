@@ -17,7 +17,7 @@ public class CorsConfig {
                         .allowedOrigins(
                                 "http://localhost:5173",
                                 "http://localhost:3000",
-                                "https://frontblackjack.onrender.com"
+                                "https://blackjackgame-ovqc.onrender.com"
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*");
