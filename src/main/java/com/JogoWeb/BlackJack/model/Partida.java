@@ -56,4 +56,13 @@ public class Partida {
 
         return null;
     }
+
+    public boolean jogadorEstaNaPartida(UUID idJogador) {
+        return jogadores.stream()
+                .anyMatch(jogador -> jogador.getId().equals(idJogador));
+    }
+
+    public boolean podeEntrar() {
+        return status == StatusPartida.AGUARDANDO_JOGADORES && !estaCheia();
+    }
 }
