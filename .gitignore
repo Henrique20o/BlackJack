@@ -31,4 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-src/main/java/com/JogoWeb/BlackJack/config/CorsConfig.java
