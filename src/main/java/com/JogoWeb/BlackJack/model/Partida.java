@@ -88,42 +88,6 @@ public class Partida {
         return status == StatusPartida.AGUARDANDO_JOGADORES && !estaCheia();
     }
 
-    public void passarTurno() {
-        if (todosJogadoresFinalizaram()) {
-            jogadorAtualId = null;
-            return;
-        }
-
-        int indiceAtual = -1;
-
-        for (int i = 0; i < jogadores.size(); i++) {
-            if (jogadores.get(i).getId().equals(jogadorAtualId)) {
-                indiceAtual = i;
-                break;
-            }
-        }
-
-        for (int i = 1; i <= jogadores.size(); i++) {
-            int proximoIndice = (indiceAtual + i) % jogadores.size();
-            Jogador proximoJogador = jogadores.get(proximoIndice);
-
-            if (!proximoJogador.isParou() && !proximoJogador.isEstourou()) {
-                jogadorAtualId = proximoJogador.getId();
-                return;
-            }
-        }
-
-        jogadorAtualId = null;
-    }
-
-    public boolean todosJogadoresFinalizaram() {
-        return jogadores.stream()
-                .allMatch(jogador -> jogador.isParou() || jogador.isEstourou());
-    }
-
-    public Jogador getJogadorAtual() {
-        return buscarJogadorPorId(jogadorAtualId);
-    }
 
     public void adicionarPontoParaJogador(UUID idJogador) {
         int pontosAtuais = placar.getOrDefault(idJogador, 0);
